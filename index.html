@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Финансовый Марафон 2026</title>
-    <!-- Подключаем Telegram WebApp SDK -->
+    <title>Финансовый Марафон</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключаем стили -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Обновляем версию стилей -->
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
-    <!-- Экран загрузки -->
     <div id="loader">
         <div class="spinner"></div>
     </div>
 
-    <!-- Экран выбора сложности (Светофор) -->
+    <!-- Экран выбора -->
     <div id="selection-screen" class="hidden">
         <div class="header-section">
             <h1 id="month-title">План на Месяц</h1>
@@ -24,7 +22,6 @@
         </div>
         
         <div class="cards-container">
-            <!-- Карточки генерируются через JS, но вот структура шаблона -->
             <div class="card card-light" onclick="selectLevel(0)">
                 <div class="card-icon">🟢</div>
                 <div class="card-content">
@@ -54,15 +51,14 @@
         </div>
     </div>
 
-    <!-- Основной экран (Матрица) -->
+    <!-- Основной экран -->
     <div id="main-app" class="hidden">
+        <!-- НОВОЕ: Заголовок месяца на главном экране -->
+        <h1 id="main-month-title" style="margin: 0 0 15px 0; font-size: 28px; padding-left: 5px;">Месяц</h1>
+
         <div class="top-bar">
-            <div class="current-level" id="current-level-display">
-                <!-- Вставляется через JS -->
-            </div>
-            <button class="settings-btn" onclick="resetProgress()">
-                ⚙️
-            </button>
+            <div class="current-level" id="current-level-display"></div>
+            <button class="settings-btn" onclick="resetProgress()">⚙️</button>
         </div>
 
         <div class="progress-container">
@@ -74,12 +70,10 @@
             </div>
         </div>
 
-        <div class="calendar-grid" id="grid">
-            <!-- Ячейки дней генерируются JS -->
-        </div>
+        <div class="calendar-grid" id="grid"></div>
     </div>
 
-    <!-- Подключаем скрипт -->
-    <script src="script.js?v=2"></script>
+    <!-- ОБНОВЛЕННАЯ ВЕРСИЯ СКРИПТА v=4 -->
+    <script src="script.js?v=4"></script>
 </body>
 </html>
