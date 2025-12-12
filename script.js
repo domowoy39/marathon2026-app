@@ -3,15 +3,10 @@ const tg = window.Telegram.WebApp;
 // Инициализация
 tg.expand();
 
-// УДАЛИЛИ ЭТУ СТРОЧКУ, ЧТОБЫ КРЕСТИК НЕ СПРАШИВАЛ ПОДТВЕРЖДЕНИЕ:
-// tg.enableClosingConfirmation(); 
-
-// --- НАСТРОЙКА КНОПКИ "ЗАКРЫТЬ" ВНИЗУ ---
-// Делаем красивую кнопку Telegram внизу экрана
+// Кнопка "ЗАКРЫТЬ" внизу экрана
 tg.MainButton.setText("ЗАКРЫТЬ");
 tg.MainButton.show();
 
-// При клике на кнопку приложение закрывается без вопросов
 tg.MainButton.onClick(() => {
     tg.close();
 });
@@ -91,7 +86,7 @@ function renderSelectionScreen() {
     const screen = document.getElementById('selection-screen');
     const goals = getCurrentGoals();
     
-    // Скрываем нижнюю кнопку на экране выбора, чтобы не мешала
+    // Скрываем нижнюю кнопку на экране выбора
     tg.MainButton.hide();
 
     document.getElementById('month-title').innerText = `План на ${MONTH_NAMES[state.monthIndex]}`;
@@ -161,8 +156,11 @@ function renderMainApp() {
     const app = document.getElementById('main-app');
     app.classList.remove('hidden');
 
-    // Показываем кнопку "ЗАКРЫТЬ" только на главном экране
+    // Показываем кнопку "ЗАКРЫТЬ"
     tg.MainButton.show();
+    
+    // --- НОВОЕ: Вставляем название месяца и год в заголовок ---
+    document.getElementById('main-month-title').innerText = `${MONTH_NAMES[state.monthIndex]} ${state.year}`;
     
     const levelsInfo = [
         { text: "Лайт", icon: "🟢" },
