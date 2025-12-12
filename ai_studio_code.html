@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Финансовый Марафон 2026</title>
+    <!-- Подключаем Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Подключаем стили -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Экран загрузки -->
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Экран выбора сложности (Светофор) -->
+    <div id="selection-screen" class="hidden">
+        <div class="header-section">
+            <h1 id="month-title">План на Месяц</h1>
+            <p>Выберите цель накоплений</p>
+        </div>
+        
+        <div class="cards-container">
+            <!-- Карточки генерируются через JS, но вот структура шаблона -->
+            <div class="card card-light" onclick="selectLevel(0)">
+                <div class="card-icon">🟢</div>
+                <div class="card-content">
+                    <div class="card-title">Лайт</div>
+                    <div class="card-amount" id="amount-0">0 ₽</div>
+                    <div class="card-desc">Для спокойствия</div>
+                </div>
+            </div>
+
+            <div class="card card-progress" onclick="selectLevel(1)">
+                <div class="card-icon">🟡</div>
+                <div class="card-content">
+                    <div class="card-title">Прогресс</div>
+                    <div class="card-amount" id="amount-1">0 ₽</div>
+                    <div class="card-desc">Рекомендую</div>
+                </div>
+            </div>
+
+            <div class="card card-challenge" onclick="selectLevel(2)">
+                <div class="card-icon">🔴</div>
+                <div class="card-content">
+                    <div class="card-title">Вызов</div>
+                    <div class="card-amount" id="amount-2">0 ₽</div>
+                    <div class="card-desc">Для рывка</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной экран (Матрица) -->
+    <div id="main-app" class="hidden">
+        <div class="top-bar">
+            <div class="current-level" id="current-level-display">
+                <!-- Вставляется через JS -->
+            </div>
+            <button class="settings-btn" onclick="resetProgress()">
+                ⚙️
+            </button>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-text">
+                <span id="saved-amount">0</span> из <span id="goal-amount">0</span> ₽
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="calendar-grid" id="grid">
+            <!-- Ячейки дней генерируются JS -->
+        </div>
+    </div>
+
+    <!-- Подключаем скрипт -->
+    <script src="script.js"></script>
+</body>
+</html>
