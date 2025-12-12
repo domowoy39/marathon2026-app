@@ -4,10 +4,13 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 tg.enableClosingConfirmation();
 
-// --- КОНФИГУРАЦИЯ ---
+// --- КОНФИГУРАЦИЯ ЦЕЛЕЙ ---
 
-// Массив сумм согласно заданию (Индексы 0-11 соответствуют Янв-Дек)
-const GOALS_MATRIX = [
+// 1. Цели специально для Декабря 2025
+const GOALS_DEC_2025 = [1000, 2000, 5000];
+
+// 2. Матрица целей на весь 2026 год (Январь - Декабрь)
+const GOALS_MATRIX_2026 = [
     [2000, 4000, 10000],    // Январь
     [3000, 7000, 20000],    // Февраль
     [4000, 10000, 30000],   // Март
@@ -27,35 +30,49 @@ const MONTH_NAMES = [
     "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
 ];
 
-// --- СОСТОЯНИЕ ---
+// --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
 let state = {
     monthIndex: 0,
     year: 0,
-    level: null,      // 0, 1, 2
+    level: null,      // 0 (Лайт), 1 (Прогресс), 2 (Вызов)
     gridData: [],     // массив сумм на каждый день
-    completed: []     // массив булевых значений (выполнено/нет)
+    completed: []     // массив галочек (true/false)
 };
 
 let storageKey = "";
 
-// --- ФУНКЦИИ ---
+// --- ЛОГИКА ---
+
+// Функция определяет, какие цели показывать в зависимости от даты
+function getCurrentGoals() {
+    // Если сейчас 2025 год и Декабрь (месяц 11 в JS, так как счет с 0)
+    if (state.year === 2025 && state.monthIndex === 11) {
+        return GOALS_DEC_2025;
+    }
+    
+    // Если сейчас 2026 год - берем из матрицы
+    if (state.year === 2026) {
+        return GOALS_MATRIX_2026[state.monthIndex];
+    }
+    
+    // Fallback (запасной вариант) на случай других дат - берем цели Декабря 2025
+    return [1000, 2000, 5000];
+}
 
 function init() {
     const date = new Date();
-    // В продакшене можно использовать фиксированный 2026 год, если цель строго на 2026
-    // Но для теста берем текущий месяц
     state.monthIndex = date.getMonth();
-    state.year = date.getFullYear(); // В реальной задаче: 2026
+    state.year = date.getFullYear();
 
-    // Ключ уникален для каждого месяца и года
+    // Уникальный ключ для сохранения (разный для каждого месяца и года)
     storageKey = `fin_marathon_${state.year}_${state.monthIndex}`;
 
-    // Загрузка данных из облака
+    // Загрузка данных из облака Telegram
     tg.CloudStorage.getItem(storageKey, (err, value) => {
         const loader = document.getElementById('loader');
         
         if (!err && value) {
-            // Данные есть - показываем сетку
+            // Данные есть - показываем сразу календарь
             const parsed = JSON.parse(value);
             state.level = parsed.level;
             state.gridData = parsed.gridData;
@@ -63,7 +80,7 @@ function init() {
             loader.classList.add('hidden');
             renderMainApp();
         } else {
-            // Данных нет - показываем выбор
+            // Данных нет - показываем экран выбора
             loader.classList.add('hidden');
             renderSelectionScreen();
         }
@@ -72,7 +89,9 @@ function init() {
 
 function renderSelectionScreen() {
     const screen = document.getElementById('selection-screen');
-    const goals = GOALS_MATRIX[state.monthIndex];
+    
+    // Получаем правильные цели через новую функцию
+    const goals = getCurrentGoals();
     
     document.getElementById('month-title').innerText = `План на ${MONTH_NAMES[state.monthIndex]}`;
     
@@ -84,7 +103,7 @@ function renderSelectionScreen() {
     screen.classList.remove('hidden');
 }
 
-// Алгоритм разбиения суммы
+// Алгоритм разбиения суммы на случайные части
 function generateRandomParts(total, days) {
     let parts = [];
     let currentSum = 0;
@@ -93,38 +112,35 @@ function generateRandomParts(total, days) {
     const avg = total / days;
     
     for (let i = 0; i < days - 1; i++) {
-        // Генерируем случайное число с разбросом +/- 30% от среднего
+        // Рандомный разброс (от 70% до 130% от среднего)
         let randomFactor = 0.7 + Math.random() * 0.6; 
         let val = Math.round(avg * randomFactor);
         
-        // Округляем до красивых чисел (10)
+        // Округляем до 10 рублей для красоты
         val = Math.ceil(val / 10) * 10;
         
-        // Минимальный платеж 10р
+        // Минимальный взнос 10р
         if (val < 10) val = 10;
         
         parts.push(val);
         currentSum += val;
     }
     
-    // Последний день забирает остаток, чтобы сумма сошлась копейка в копейку
+    // Последний день забирает остаток
     let remainder = total - currentSum;
     
-    // Если остаток получился отрицательным или слишком маленьким (из-за рандома), 
-    // корректируем предыдущие дни
+    // Если рандом "перестарался" и остаток <= 0, делаем пересчет по-простому
     if (remainder <= 0) {
-        // Простой фикс: равномерное распределение, если рандом сломался
-        // В реальном приложении можно использовать более сложный рекурсивный метод
-        // Здесь для простоты вернем равномерное распределение
         return generateEvenParts(total, days);
     }
     
     parts.push(remainder);
     
-    // Перемешиваем массив, чтобы большие суммы не скапливались в конце
+    // Перемешиваем дни, чтобы суммы шли вразнобой
     return parts.sort(() => Math.random() - 0.5);
 }
 
+// Запасной генератор (ровными частями), если сложный сломается
 function generateEvenParts(total, days) {
     let parts = [];
     let rem = total;
@@ -138,9 +154,12 @@ function generateEvenParts(total, days) {
 }
 
 function selectLevel(level) {
+    // Вибрация при нажатии
     tg.HapticFeedback.impactOccurred('medium');
     
-    const totalGoal = GOALS_MATRIX[state.monthIndex][level];
+    // Получаем цель на основе выбранного уровня (0, 1 или 2) и текущей даты
+    const goals = getCurrentGoals();
+    const totalGoal = goals[level];
     
     // Определяем количество дней в текущем месяце
     const daysInMonth = new Date(state.year, state.monthIndex + 1, 0).getDate();
@@ -149,14 +168,15 @@ function selectLevel(level) {
     const gridData = generateRandomParts(totalGoal, daysInMonth);
     const completed = new Array(daysInMonth).fill(false);
     
-    // Сохраняем состояние
+    // Сохраняем состояние в переменную
     state.level = level;
     state.gridData = gridData;
     state.completed = completed;
     
+    // Сохраняем в облако
     saveState();
     
-    // Переход к интерфейсу
+    // Переключаем экраны
     document.getElementById('selection-screen').classList.add('hidden');
     renderMainApp();
 }
@@ -165,7 +185,7 @@ function renderMainApp() {
     const app = document.getElementById('main-app');
     app.classList.remove('hidden');
     
-    // Хедер
+    // Обновляем заголовок уровня
     const levelsInfo = [
         { text: "Лайт", icon: "🟢" },
         { text: "Прогресс", icon: "🟡" },
@@ -174,7 +194,6 @@ function renderMainApp() {
     const info = levelsInfo[state.level];
     document.getElementById('current-level-display').innerText = `${info.icon} ${info.text}`;
     
-    // Отрисовка сетки
     renderGrid();
     updateProgress();
 }
@@ -183,7 +202,7 @@ function renderGrid() {
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
     
-    const today = new Date().getDate(); // Число месяца (1-31)
+    const today = new Date().getDate(); // Текущее число (1-31)
     
     state.gridData.forEach((amount, index) => {
         const dayNum = index + 1;
@@ -191,7 +210,9 @@ function renderGrid() {
         
         const cell = document.createElement('div');
         cell.className = 'day-cell';
+        
         if (isCompleted) cell.classList.add('checked');
+        // Подсветка "Сегодня"
         if (dayNum === today) cell.classList.add('today');
         
         cell.innerHTML = `
@@ -206,22 +227,12 @@ function renderGrid() {
 }
 
 function toggleDay(index) {
-    // Вибрация
     tg.HapticFeedback.selectionChanged();
     
-    // Логика переключения
     state.completed[index] = !state.completed[index];
     
-    // Обновляем UI одной ячейки (оптимизация)
-    const cells = document.querySelectorAll('.day-cell');
-    const cell = cells[index];
-    
-    if (state.completed[index]) {
-        cell.classList.add('checked');
-    } else {
-        cell.classList.remove('checked');
-    }
-    
+    // Перерисовываем сетку для обновления стилей
+    renderGrid(); 
     updateProgress();
     saveState();
 }
@@ -240,7 +251,7 @@ function updateProgress() {
     const percent = (saved / total) * 100;
     document.getElementById('progress-bar').style.width = `${percent}%`;
     
-    // Если 100% - салют (вибрация успеха)
+    // Салют (вибрация успеха) при 100%
     if (saved === total && total > 0) {
         tg.HapticFeedback.notificationOccurred('success');
     }
@@ -257,10 +268,9 @@ function saveState() {
 }
 
 function resetProgress() {
-    tg.showConfirm("Вы уверены, что хотите сбросить прогресс и выбрать новый уровень сложности?", (ok) => {
+    tg.showConfirm("Сбросить прогресс и выбрать новую цель?", (ok) => {
         if (ok) {
             tg.HapticFeedback.impactOccurred('heavy');
-            // Очищаем хранилище
             tg.CloudStorage.removeItem(storageKey, (err) => {
                 if (!err) location.reload();
             });
@@ -268,7 +278,7 @@ function resetProgress() {
     });
 }
 
-// Утилита форматирования денег (1 000)
+// Форматирование денег (пробелы между тысячами)
 function formatMoney(num) {
     return new Intl.NumberFormat('ru-RU').format(num);
 }
